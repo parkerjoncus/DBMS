@@ -7,17 +7,16 @@
 #include "dberror.h"
 
 void initStorageManager (void){
-    
 }
 
-RC createPageFile (char *filename){
+RC createPageFile (char *fileName){
     FILE *fpointer;
-    fpointer = fopen(filename,"wb");
+    fpointer = fopen(fileName,"wb");
     if (fp==NULL){
         return RC_FILE_NOT_FOUND;
     }
-    SM_PageHandle newpage = (SM_PageHandle) calloc(PAGE_SIZE, size(char));
-    int writePage = fwrite(newpage, sizeof(char), PAGE_SIZE, fpointer);
+    SM_PageHandle newPage = (SM_PageHandle) calloc(PAGE_SIZE, size(char));
+    int writePage = fwrite(newPage, sizeof(char), PAGE_SIZE, fpointer);
     if (writePage==0){
         return RC_WRITE_FAILED;
     }
@@ -26,25 +25,32 @@ RC createPageFile (char *filename){
     return RC_OK;
 }
 
-RC openPageFile(char *filename, SM_FileHandle *fHandle){
+RC openPageFile(char *fileName, SM_FileHandle *fHandle){
     FILE *fpointer;
-    fpointer = fopen(*filename,"r+b");
+    fpointer = fopen(*fileName,"r+b");
     if (fpointer==NULL){
-        return RC_FILE_NOT_FOUND
+        return RC_FILE_NOT_FOUND;
     }
-    
+    fseek(fpointer, 0, SEEK_END);
+    long length = ftell(fpointer);
+    int totalPages = (int)length/PAGE_SIZE;
+    fHandle->fileName = fileName;
+    fHandle->totalNumPages = totalPages;
+    fHandle->curPagePos = 0;
+    fHandle->mgmtInfo = fpointer;
+    return RC_OK;
 }
 
 RC closePageFile (SM_FileHandle *fHandle){
     if(fclose(*fHandle->mgmtInfo)==0){
-        return RC_OK
+        return RC_OK;
     }
-    return RC_FILE_NOT_FOUND
+    return RC_FILE_NOT_FOUND;
 }
 
-RC destroyPageFile (char *filename){
-    if(remove(filename)==0){
-        return RC_OK
+RC destroyPageFile (char *fileName){
+    if(remove(fileName)==0){
+        return RC_OK;
     }
-    return RC_FILE_NOT_FOUND
+    return RC_FILE_NOT_FOUND;
 }
