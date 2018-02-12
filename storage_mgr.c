@@ -12,7 +12,7 @@ void initStorageManager (void){
 RC createPageFile (char *fileName){
     FILE *fpointer;
     fpointer = fopen(fileName,"wb");
-    if (fp==NULL){
+    if (fpointer==NULL){
         return RC_FILE_NOT_FOUND;
     }
     SM_PageHandle newPage = (SM_PageHandle) calloc(PAGE_SIZE, size(char));
