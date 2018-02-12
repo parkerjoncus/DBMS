@@ -1,6 +1,6 @@
 #include <stdio.h>
 #include <stdlib.h>
-#inslude <string.h>
+#include <string.h>
 #include "storage_mgr.h"
 #include "dberror.h"
 
