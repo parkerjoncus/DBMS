@@ -19,7 +19,7 @@ RC createPageFile (char *fileName){
     }
 
     //Creating the new Page handle and initializing it
-    SM_PageHandle newPage = (SM_PageHandle) calloc(PAGE_SIZE, size(char));
+    SM_PageHandle newPage = (SM_PageHandle) calloc(PAGE_SIZE, sizeof(char));
     int writePage = fwrite(newPage, sizeof(char), PAGE_SIZE, fpointer);
 
     //Check that the write worked
@@ -28,7 +28,7 @@ RC createPageFile (char *fileName){
     }
 
     //Deallocate memory and close pointer.
-    free(newpage);
+    free(newPage);
     fclose(fpointer);
     return RC_OK;
 }
