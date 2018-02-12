@@ -37,7 +37,7 @@ RC createPageFile (char *fileName){
 RC openPageFile(char *fileName, SM_FileHandle *fHandle){
     //initialize pointer and open file with r+b
     FILE *fpointer;
-    fpointer = fopen(*fileName,"r+b");
+    fpointer = fopen(fileName,"r+b");
 
     //Check to see if the file exists
     if (fpointer==NULL){
