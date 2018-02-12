@@ -62,7 +62,7 @@ RC openPageFile(char *fileName, SM_FileHandle *fHandle){
 //Closes a file given a file handle
 RC closePageFile (SM_FileHandle *fHandle){
     //Close file as well as checking that it was found
-    if(fclose(*fHandle->mgmtInfo)==0){
+    if(fclose(fHandle->mgmtInfo)==0){
         return RC_OK;
     }
     return RC_FILE_NOT_FOUND;
