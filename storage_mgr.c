@@ -163,7 +163,7 @@ RC readLastBlock(SM_FileHandle *fHandle, SM_PageHandle memPage)
 /* writing blocks to a page file Absolute position. It is already open when I get it*/
 extern RC writeBlock (int pageNum, SM_FileHandle *fHandle, SM_PageHandle memPage)
 {
-  ensureCapacity(&fHandle->totalNumPages,fHandle);
+  ensureCapacity(fHandle->totalNumPages,fHandle);
   int placement = fseek(fHandle->mgmtInfo, pageNum * PAGE_SIZE * sizeof(char), SEEK_SET); //find the correct page
 
   int writtenSize = fwrite(memPage, sizeof(char), PAGE_SIZE, fHandle->mgmtInfo); //write o the page
