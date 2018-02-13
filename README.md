@@ -11,7 +11,7 @@ All- Met to fix errors, split tasks and discuss many aspects of the assignment.
 
 2. Do we Need More Tests?
 Yes, not all of the methods in my section were covered. I added a test to trigger all of my methods.
-I uncovered and error and added ensureCapacity to every write by adding it to one method.
+I uncovered an error and added ensureCapacity to every write by adding it to one method.
 
 3. Ideas behind our Methods?
 The idea was simplicity. We came up with how the system was going to function and based our structure of the
@@ -24,4 +24,7 @@ have correct information.
 Make
 ./executablename
 
-UNIX Compiling
+6. Windows Compiling
+Type the following two commands in the command-line tool (make sure you are in the project directory)
+>make TestAssn1
+>TestAssn1.exe
