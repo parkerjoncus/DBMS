@@ -16,22 +16,51 @@ char *testName;
 /* prototypes for test functions */
 static void testCreateOpenClose(void);
 static void testSinglePageContent(void);
+static void testWritesDeeper(void);
 
 /* main function running all tests */
 int
 main (void)
 {
   testName = "";
-  
+
   initStorageManager();
 
   testCreateOpenClose();
   testSinglePageContent();
+  testWritesDeeper();
 
   return 0;
 }
 
+void testWritesDeeper(void)
+{
+  SM_FileHandle fh;
+  SM_PageHandle ph;
+  testName = "Test that writing methods function as they should";
+  TEST_CHECK(createPageFile (TESTPF));
+  TEST_CHECK(openPageFile (TESTPF, &fh));
+  int i;
 
+  // change ph to be a string and write that one to disk
+  for (i=0; i < PAGE_SIZE; i++)
+    ph[i] = (i % 10) + '0';
+
+
+  TEST_CHECK(writeCurrentBlock (&fh, ph)); //writeCurrentBlock is now tested
+
+  TEST_CHECK(readFirstBlock (&fh, ph)); //Make sure writeCurrentBlock is accurate
+  for (i=0; i < PAGE_SIZE; i++)
+    ASSERT_TRUE((ph[i] == (i % 10) + '0'), "character in page read from disk is the one we expected.");
+  printf("reading first block\n");
+
+  //write over PAGE_SIZE
+  for (i=0; i < PAGE_SIZE+2; i++)
+    ph[i] = (i % 10) + '0';
+
+  TEST_CHECK(writeCurrentBlock(&fh, ph)); //write it
+  ASSERT_TRUE((fh.totalNumPages == 1), "expect 2 page in new file");
+}
 /* check a return code. If it is not RC_OK then output a message, error description, and exit */
 /* Try to create, open, and close a page file */
 void
@@ -42,7 +71,7 @@ testCreateOpenClose(void)
   testName = "test create open and close methods";
 
   TEST_CHECK(createPageFile (TESTPF));
-  
+
   TEST_CHECK(openPageFile (TESTPF, &fh));
   ASSERT_TRUE(strcmp(fh.fileName, TESTPF) == 0, "filename correct");
   ASSERT_TRUE((fh.totalNumPages == 1), "expect 1 page in new file");
@@ -53,6 +82,11 @@ testCreateOpenClose(void)
 
   // after destruction trying to open the file should cause an error
   ASSERT_TRUE((openPageFile(TESTPF, &fh) != RC_OK), "opening non-existing file should return an error.");
+
+
+
+
+
 
   TEST_DONE();
 }
@@ -73,14 +107,14 @@ testSinglePageContent(void)
   TEST_CHECK(createPageFile (TESTPF));
   TEST_CHECK(openPageFile (TESTPF, &fh));
   printf("created and opened file\n");
-  
+
   // read first page into handle
   TEST_CHECK(readFirstBlock (&fh, ph));
   // the page should be empty (zero bytes)
   for (i=0; i < PAGE_SIZE; i++)
     ASSERT_TRUE((ph[i] == 0), "expected zero byte in first page of freshly initialized page");
   printf("first block was empty\n");
-    
+
   // change ph to be a string and write that one to disk
   for (i=0; i < PAGE_SIZE; i++)
     ph[i] = (i % 10) + '0';
@@ -94,7 +128,7 @@ testSinglePageContent(void)
   printf("reading first block\n");
 
   // destroy new page file
-  TEST_CHECK(destroyPageFile (TESTPF));  
-  
+  TEST_CHECK(destroyPageFile (TESTPF));
+
   TEST_DONE();
 }
