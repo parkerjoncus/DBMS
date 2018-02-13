@@ -7,6 +7,7 @@ Eddie - The writes section and testing.
 Yohann - The reads and testing.
 Parker - The file creation and handling.
 Ashwani - Testing and makefile.
+All- Met to fix errors, split tasks and discuss many aspects of the assignment.
 
 2. Do we Need More Tests?
 Yes, not all of the methods in my section were covered. I added a test to trigger all of my methods.
@@ -18,3 +19,9 @@ testing methods the professor provided. All reads and writes should assume files
 have correct information.
 
 4. Commenting the code. See code.
+
+5. Linux Compiling
+Make
+./executablename
+
+UNIX Compiling
