@@ -18,3 +18,9 @@ testing methods the professor provided. All reads and writes should assume files
 have correct information.
 
 4. Commenting the code. See code.
+
+5. Linux Compiling
+   Make
+   ./executablename
+
+   UNIX Compiling
