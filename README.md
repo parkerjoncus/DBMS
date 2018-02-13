@@ -22,7 +22,7 @@ have correct information.
 
 5. Linux Compiling
 Make
-./executablename
+./TestAssn1
 
 6. Windows Compiling
 Type the following two commands in the command-line tool (make sure you are in the project directory)
