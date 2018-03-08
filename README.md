@@ -1,2 +1,3 @@
 # CS525
-assignment 1. read/write block to file on disk
+Coding assignments for Illinois Tech's CS 525 Database Management Systems.
+These codes were created by Parker Joncus, Ashwani Panwar, Edgar Gangware, and Yohann Fallourd.
