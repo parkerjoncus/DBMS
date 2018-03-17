@@ -156,3 +156,11 @@ RC forceFlushPool(BM_bufferPool *const bm){
     free(dirtyflags)
     return RC_OK;
 }
+
+RC FIFO(BM_BufferPool *const bm, BM_PageHandle *const page, PageNumber pageNum){
+    return RC_OK;
+}
+
+RC LRU(BM_BufferPool *const bm, BM_PageHandle *const page, PageNumber pageNum){
+    return RC_OK;
+}
