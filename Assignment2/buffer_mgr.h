@@ -61,4 +61,7 @@ int *getFixCounts (BM_BufferPool *const bm);
 int getNumReadIO (BM_BufferPool *const bm);
 int getNumWriteIO (BM_BufferPool *const bm);
 
+// Replacement strategies
+RC FIFO(BM_BufferPool *const bm, BM_PageHandle *const page, PageNumber pageNum);
+RC LRU(BM_BufferPool *const bm, BM_PageHandle *const page, PageNumber pageNum);
 #endif
