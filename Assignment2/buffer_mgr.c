@@ -3,6 +3,7 @@
 #include <string.h>
 
 #include "buffer_mgr.h"
+#include "buffer_mgr_stat.c"
 #include "dberror.h"
 #include "storage_mgr.c"
 
