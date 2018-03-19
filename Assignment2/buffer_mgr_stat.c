@@ -1,5 +1,6 @@
 #include "buffer_mgr_stat.h"
 #include "buffer_mgr.h"
+#include "dt.h"
 
 #include <stdio.h>
 #include <stdlib.h>
@@ -8,7 +9,7 @@
 static void printStrat (BM_BufferPool *const bm);
 
 // external functions
-void 
+void
 printPoolContent (BM_BufferPool *const bm)
 {
 	PageNumber *frameContent;
@@ -103,3 +104,81 @@ printStrat (BM_BufferPool *const bm)
 		break;
 	}
 }
+
+/*The getFrameContents function returns an array of PageNumbers
+(of size numPages) where the ith element is the number of the page stored in the
+ith page frame. An empty page frame is represented using the constant NO_PAGE.*/
+
+PageNumber *getFrameContents (BM_BufferPool *const bm)
+{
+  int i;
+  //PageNumber is the position of the page in the page file
+  PageNumber *array = (PageNumber*) malloc(bm->numPages * sizeof(PageNumber)); //create allocated space for the dynamic array_size
+  //mgmtData is used here to hold the position of the PageNumbers
+  BM_PageHandle *bufferPoolptr = bm->mgmtData;
+
+  for (i=0; i < bm->numPages; i++)
+  {
+    if ((i + bufferPoolptr)->data == NULL)
+    {
+      array[i] = NO_PAGE;
+
+    } else {
+      array[i] = (i + bufferPoolptr)->pageNum;
+    }
+  }
+} // end getFrameContents
+
+/*The getDirtyFlags function returns an array of bools (?of size numPages?) where
+ the ith element is TRUE if the page stored in the ith page frame is dirty.
+ Empty page frames are considered as clean.*/
+bool *getDirtyFlags (BM_BufferPool *const bm)
+{
+  bool *array =  (bool*)malloc(bm->numPages * sizeof(PageNumber));
+
+  BM_PageHandle *bufferPoolptr = bm->mgmtData;
+
+  int i;
+  for (i=0; i<bm->numPages; i++)
+  {
+    array[i] = (i + bufferPoolptr)->dirty;
+  }
+
+  return array;
+} //end getDirtyFlags
+
+/*The getFixCounts function returns an array of ints (of size numPages) where
+ the ith element is the fix count of the page stored in the ith page frame.
+ Return 0 for empty page frames.*/
+int *getFixCounts (BM_BufferPool *const bm){
+  int *array = (int *)malloc(bm->numPages * sizeof(int));
+
+  BM_PageHandle *bufferPoolptr = bm->mgmtData;
+
+  int i;
+
+  for (i=0; i<bm->numPages; i++)
+  {
+    array[i] = (i + bufferPoolptr)->fixCount;
+  }
+
+  return array;
+
+} //end getFixCounts
+
+/*The getNumReadIO function returns the number of pages that have been read from
+ disk since a buffer pool has been initialized. You code is responsible to
+ initializing this statistic at pool creating time and update whenever a page
+ is read from the page file into a page frame.*/
+int getNumReadIO (BM_BufferPool *const bm)
+{
+  return bm->numReadIO;
+} //end getNumReadIO
+
+/*getNumWriteIO returns the number of pages written to the page file since the
+buffer pool has been initialized.*/
+int getNumWriteIO (BM_BufferPool *const bm)
+{
+  return bm->numWriteIO;
+
+} //end getNumWriteIO
