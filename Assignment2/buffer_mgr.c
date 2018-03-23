@@ -94,17 +94,13 @@ RC forceFlushPool(BM_BufferPool *const bm){
     
     int i = 0;
     while (i < numPages){
-        if ((*(dirtyflags + i) == true) && (*(fixcounts + i) == 0)){
-            //load current frame and page number
-            Frame *f = &(BP->mgmtData[i]);
-            PageNumber pageNum = f->pageNum;
+        if ((*(dirtyflags + i) == 1) && (*(fixcounts + i) == 0)){
             //write to file
             SM_FileHandle fileHandle;
             openPageFile(bm->pageFile, &fileHandle);
-            ensureCapacity(f->pageNum+1,&fileHandle);
-            writeBlock(pageNum, &fileHandle, BP[i].data);
+            writeBlock(BP[i].pageNum, &fileHandle, BP[i].data);
             closePageFile(&fileHandle);
-            BP[i]->dirty = false;
+            BP[i].dirty = 0;
             bm->writeNum++;
         }
         i++;
