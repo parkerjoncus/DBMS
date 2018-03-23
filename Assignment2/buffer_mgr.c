@@ -145,6 +145,7 @@ RC forcePage (BM_BufferPool *const bm, BM_PageHandle *const page){
     Frame* frame = findPage(bm, page);
     writeBlock(frame->pageNum, &filehandle, frame->data);
     closePageFile(&filehandle);
+    bm->writeNum++;
 
     return RC_OK;
 }
@@ -189,6 +190,7 @@ RC pinPage (BM_BufferPool *const bm, BM_PageHandle *const page,
     if(frame){
         page->pageNum = pageNum;
         frame->fixCount++;
+        bm->readNum++;
         frame->timeLastUsed = (long) time(NULL); //Page is used, record time
         page->data = frame->data;
         return RC_OK;
@@ -201,6 +203,7 @@ RC pinPage (BM_BufferPool *const bm, BM_PageHandle *const page,
         } else if(bm->strategy == RS_LRU){
             return LRU(bm, page, pageNum);
         }
+        bm->readNum++;
     } else {
         //Otherwise, create it
         frame = findFreeFrame(bm);
@@ -212,6 +215,7 @@ RC pinPage (BM_BufferPool *const bm, BM_PageHandle *const page,
         frame->timeLastUsed = (long) time(NULL); //Page is used, record time
         frame->pageNum = pageNum;
         frame->fixCount++;
+        bm->readNum++;
         page->pageNum = pageNum;
         page->data = frame->data;
         return RC_OK;
