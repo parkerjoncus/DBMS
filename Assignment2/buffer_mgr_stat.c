@@ -160,7 +160,7 @@ int *getFixCounts (BM_BufferPool *const bm){
 
   for (i=0; i<bm->numPages; i++)
   {
-    array[i] = (i + bufferPoolptr)->fixcount;
+    array[i] = (i + bufferPoolptr)->fixCount;
   }
 
   return array;
