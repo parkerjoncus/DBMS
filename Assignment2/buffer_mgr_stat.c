@@ -127,6 +127,7 @@ PageNumber *getFrameContents (BM_BufferPool *const bm)
       array[i] = (i + bufferPoolptr)->pageNum;
     }
   }
+	return array;
 } // end getFrameContents
 
 /*The getDirtyFlags function returns an array of bools (?of size numPages?) where
@@ -135,8 +136,8 @@ PageNumber *getFrameContents (BM_BufferPool *const bm)
 bool *getDirtyFlags (BM_BufferPool *const bm)
 {
   bool *array =  (bool*)malloc(bm->numPages * sizeof(PageNumber));
-    Frame *bufferPoolptr = (Frame *)bm->mgmtData;
-  //BM_PageHandle *bufferPoolptr = bm->mgmtData;
+
+  Frame *bufferPoolptr = bm->mgmtData;
 
   int i;
   for (i=0; i<bm->numPages; i++)
@@ -152,14 +153,14 @@ bool *getDirtyFlags (BM_BufferPool *const bm)
  Return 0 for empty page frames.*/
 int *getFixCounts (BM_BufferPool *const bm){
   int *array = (int *)malloc(bm->numPages * sizeof(int));
-    Frame *bufferPoolptr = (Frame *)bm->mgmtData;
-  //BM_PageHandle *bufferPoolptr = bm->mgmtData;
+
+  Frame *bufferPoolptr = bm->mgmtData;
 
   int i;
 
   for (i=0; i<bm->numPages; i++)
   {
-    array[i] = (i + bufferPoolptr)->fixCount;
+    array[i] = (i + bufferPoolptr)->fixcount;
   }
 
   return array;
