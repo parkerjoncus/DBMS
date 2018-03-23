@@ -7,19 +7,8 @@
 #include "storage_mgr.c"
 
 //Frame information structure
-typedef struct Frame{
-    char *data; //pointer to data
-    PageNumber pageNum; //page number in the page file
-    int frameNum; //frame number in the buffer pool
-    int fixcount; //counts users reading frame
-    bool dirty; //boolean for if the frame has been changed
-    struct Frame *previousFrame;
-    struct Frame *nextFrame;
-    long timeStamp; //time stamp
-} Frame;
 
 typedef struct BufferPool{
-    Frame *bufferPool; //pointer to buffer pool
     Frame *firstFrame; //pointer to first frame
     Frame *lastFrame; //pointer to last frame
     int readNum; //number of pages read
@@ -30,7 +19,7 @@ long globalTime=0;
 
 //initialize the Buffer Pool
 RC initBufferPool(BM_BufferPool *const bm, const char *const pageFileName,
-                  const int numPages, ReplacementStratetgy strategy,
+                  const int numPages, ReplacementStrategy strategy,
                   void *stratData){
     //creates buffer pool with size of the number of pages in the frame
     Frame *BP = (Frame *) malloc(numPages * sizeof(Frame));
@@ -160,11 +149,11 @@ RC forceFlushPool(BM_bufferPool *const bm){
 //Looping helper function
 Frame* findPage(BM_BufferPool *const bm, BM_PageHandle *const page){
     //We extract the frame array from our Buffer Pool
-    Frame frames[] = (Frame*) bm->mgmtData;
+    Frame* frames = (Frame*) bm->mgmtData;
 
     for(int i=0;i<bm->numPages;++i){
         if(frames[i].pageNum == page->pageNum){
-            return frames[i];
+            return &frames[i];
         }
     }
 }
@@ -172,11 +161,13 @@ Frame* findPage(BM_BufferPool *const bm, BM_PageHandle *const page){
 // Buffer Manager Interface Access Pages
 RC markDirty (BM_BufferPool *const bm, BM_PageHandle *const page){
     //Cycle through the frames until we find the one to mark as dirty
-    findpage(bm, page)->dirty = true;
+    Frame* frame = findPage(bm, page);
+    frame->dirty = true;
 }
 
 RC unpinPage (BM_BufferPool *const bm, BM_PageHandle *const page){
-    findpage(bm, page)->fixcount--;
+    Frame* frame = findPage(bm, page);
+    frame->fixcount--;
 }
 
 RC forcePage (BM_BufferPool *const bm, BM_PageHandle *const page){
@@ -185,11 +176,11 @@ RC forcePage (BM_BufferPool *const bm, BM_PageHandle *const page){
     openPageFile(bm->pageFile, &filehandle);
     Frame* frame = findPage(bm, page);
     writeBlock(frame->pageNum, &filehandle, frame->data);
-    closePageFile(bm->pageFile, &filehandle);
+    closePageFile(&filehandle);
 }
 
 bool isBufferFull(BM_BufferPool *const bm){
-    Frame frames[] = (Frame*) bm->mgmtData;
+    Frame* frames = (Frame*) bm->mgmtData;
 
     for(int i=0;i<bm->numPages;++i){
         if(frames[i].pageNum == NO_PAGE){ //If a frame has not been assigned to a page, it's free
@@ -200,24 +191,24 @@ bool isBufferFull(BM_BufferPool *const bm){
 }
 
 Frame* findFreeFrame(BM_BufferPool *const bm){
-    Frame frames[] = (Frame*) bm->mgmtData;
+    Frame* frames = (Frame*) bm->mgmtData;
 
     for(int i=0;i<bm->numPages;++i){
-        if(frames[i]->pageNum == NO_PAGE){ //If a frame has not been assigned to a page, it's free
-            return frames[i];
+        if(frames[i].pageNum == NO_PAGE){ //If a frame has not been assigned to a page, it's free
+            return &frames[i];
         }
     }
 }
 
 Frame* checkExistingFrames(BM_BufferPool *const bm, const PageNumber pageNum){
-    Frame frames[] = (Frame*) bm->mgmtData;
+    Frame* frames = (Frame*) bm->mgmtData;
 
     for(int i=0;bm->numPages;++i){
-        if(frames[i]->pageNum == pageNum){
-            return frames[i];
+        if(frames[i].pageNum == pageNum){
+            return &frames[i];
         }
     }
-    return nullptr;
+    return NULL;
 }
 
 RC pinPage (BM_BufferPool *const bm, BM_PageHandle *const page,
@@ -239,7 +230,7 @@ RC pinPage (BM_BufferPool *const bm, BM_PageHandle *const page,
             return RC_OK;
         }
         //Otherwise, create it
-        Frame* frame = findFreeFrame(bm);
+        frame = findFreeFrame(bm);
 
         SM_FileHandle filehandle;
         openPageFile(bm->pageFile, &filehandle);
