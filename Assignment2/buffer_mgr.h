@@ -7,6 +7,8 @@
 // Include bool DT
 #include "dt.h"
 
+#include "storage_mgr.h"
+
 // Replacement Strategies
 typedef enum ReplacementStrategy {
 	RS_FIFO = 0,
@@ -20,16 +22,21 @@ typedef enum ReplacementStrategy {
 typedef int PageNumber;
 #define NO_PAGE -1
 
+typedef struct BM_PageHandle {
+    PageNumber pageNum;
+    char *data;
+} BM_PageHandle;
+
 typedef struct Frame{
-	char *data; //pointer to data
-	PageNumber pageNum; //page number in the page file
-	int frameNum; //frame number in the buffer pool
-	int fixCount; //counts users reading frame
-	bool dirty; //boolean for if the frame has been changed
-	struct Frame *previousFrame;
-	struct Frame *nextFrame;
-	long timeLastUsed; //time stamp for LRU
-	long timeFirstPinned; //time stamp for FIFO
+    SM_PageHandle data; //pointer to data
+    PageNumber pageNum; //page number in the page file
+    int frameNum; //frame number in the buffer pool
+    int fixCount; //counts users reading frame
+    bool dirty; //boolean for if the frame has been changed
+    struct Frame *previousFrame;
+    struct Frame *nextFrame;
+    long timeLastUsed; //time stamp for LRU
+    long timeFirstPinned; //time stamp for FIFO
 } Frame;
 
 typedef struct BM_BufferPool {
@@ -44,10 +51,8 @@ typedef struct BM_BufferPool {
 	int writeNum; // number of pages written
 } BM_BufferPool;
 
-typedef struct BM_PageHandle {
-	PageNumber pageNum;
-	char *data;
-} BM_PageHandle;
+
+
 
 // convenience macros
 #define MAKE_POOL()					\

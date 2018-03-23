@@ -5,8 +5,6 @@
 
 #include "buffer_mgr.h"
 #include "buffer_mgr_stat.h"
-#include "dberror.h"
-#include "storage_mgr.h"
 
 //initialize the Buffer Pool
 RC initBufferPool(BM_BufferPool *const bm, const char *const pageFileName,
@@ -17,7 +15,7 @@ RC initBufferPool(BM_BufferPool *const bm, const char *const pageFileName,
     
     int i=0;
     while (i < numPages){
-        BP[i].data = (SM_PageHandle *) malloc(PAGE_SIZE * sizeof(char)); //Allocate memory
+        BP[i].data = NULL;
         BP[i].frameNum = i; //Set frame number
         BP[i].pageNum = NO_PAGE; //set to no page since initialize
         BP[i].fixCount = 0; //initialize to 0 since no access
@@ -193,7 +191,7 @@ RC pinPage (BM_BufferPool *const bm, BM_PageHandle *const page,
         page->pageNum = pageNum;
         frame->fixCount++;
         frame->timeLastUsed = (long) time(NULL); //Page is used, record time
-        page->data = frame;
+        page->data = frame->data;
         return RC_OK;
     }
 
@@ -207,7 +205,7 @@ RC pinPage (BM_BufferPool *const bm, BM_PageHandle *const page,
     } else {
         //Otherwise, create it
         frame = findFreeFrame(bm);
-
+        frame->data = (SM_PageHandle) malloc(PAGE_SIZE);
         SM_FileHandle filehandle;
         openPageFile(bm->pageFile, &filehandle);
         readBlock(pageNum, &filehandle, frame->data);
@@ -216,7 +214,7 @@ RC pinPage (BM_BufferPool *const bm, BM_PageHandle *const page,
         frame->pageNum = pageNum;
         frame->fixCount++;
         page->pageNum = pageNum;
-        page->data = frame;
+        page->data = frame->data;
         return RC_OK;
     }
 }
@@ -235,6 +233,7 @@ RC FIFO(BM_BufferPool *const bm, BM_PageHandle *const page, PageNumber pageNum){
     }
 
     SM_FileHandle filehandle;
+    firstIn->data = (SM_PageHandle) malloc(PAGE_SIZE);
     openPageFile(bm->pageFile, &filehandle);
     readBlock(pageNum, &filehandle, firstIn->data);
     firstIn->timeFirstPinned = (long) time(NULL); //First time the frame is used
@@ -242,7 +241,7 @@ RC FIFO(BM_BufferPool *const bm, BM_PageHandle *const page, PageNumber pageNum){
     firstIn->pageNum = pageNum;
     firstIn->fixCount++;
     page->pageNum = pageNum;
-    page->data = firstIn;
+    page->data = firstIn->data;
 
     return RC_OK;
 }
@@ -261,6 +260,7 @@ RC LRU(BM_BufferPool *const bm, BM_PageHandle *const page, PageNumber pageNum){
     }
 
     SM_FileHandle filehandle;
+    leastRecUsed->data = (SM_PageHandle) malloc(PAGE_SIZE);
     openPageFile(bm->pageFile, &filehandle);
     readBlock(pageNum, &filehandle, leastRecUsed->data);
     leastRecUsed->timeFirstPinned = (long) time(NULL); //First time the frame is used
@@ -268,7 +268,7 @@ RC LRU(BM_BufferPool *const bm, BM_PageHandle *const page, PageNumber pageNum){
     leastRecUsed->pageNum = pageNum;
     leastRecUsed->fixCount++;
     page->pageNum = pageNum;
-    page->data = leastRecUsed;
-    
+    page->data = leastRecUsed->data;
+
     return RC_OK;
 }
