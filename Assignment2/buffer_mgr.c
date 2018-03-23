@@ -3,9 +3,9 @@
 #include <string.h>
 
 #include "buffer_mgr.h"
-#include "buffer_mgr_stat.c"
+#include "buffer_mgr_stat.h"
 #include "dberror.h"
-#include "storage_mgr.c"
+#include "storage_mgr.h"
 
 //initialize the Buffer Pool
 RC initBufferPool(BM_BufferPool *const bm, const char *const pageFileName,
@@ -19,7 +19,7 @@ RC initBufferPool(BM_BufferPool *const bm, const char *const pageFileName,
         BP[i].data = (SM_PageHandle *) malloc(PAGE_SIZE * sizeof(char)); //Allocate memory
         BP[i].frameNum = i; //Set frame number
         BP[i].pageNum = NO_PAGE; //set to no page since initialize
-        BP[i].fixcount = 0; //initialize to 0 since no access
+        BP[i].fixCount = 0; //initialize to 0 since no access
         BP[i].dirty = false; //initialize to false since no change
         BP[i].timeStamp = 0;
         
@@ -132,7 +132,7 @@ RC markDirty (BM_BufferPool *const bm, BM_PageHandle *const page){
 
 RC unpinPage (BM_BufferPool *const bm, BM_PageHandle *const page){
     Frame* frame = findPage(bm, page);
-    frame->fixcount--;
+    frame->fixCount--;
 }
 
 RC forcePage (BM_BufferPool *const bm, BM_PageHandle *const page){
@@ -190,7 +190,7 @@ RC pinPage (BM_BufferPool *const bm, BM_PageHandle *const page,
         Frame* frame = checkExistingFrames(bm, pageNum);
         if(frame){
             page->pageNum = pageNum;
-            frame->fixcount++;
+            frame->fixCount++;
             page->data = frame;
             return RC_OK;
         }
@@ -202,7 +202,7 @@ RC pinPage (BM_BufferPool *const bm, BM_PageHandle *const page,
         readBlock(pageNum, &filehandle, frame->data);
 
         frame->pageNum = pageNum;
-        frame->fixcount++;
+        frame->fixCount++;
         page->pageNum = pageNum;
         page->data = frame;
         return RC_OK;
