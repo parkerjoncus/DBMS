@@ -7,17 +7,6 @@
 #include "dberror.h"
 #include "storage_mgr.c"
 
-//Frame information structure
-
-typedef struct BufferPool{
-    Frame *firstFrame; //pointer to first frame
-    Frame *lastFrame; //pointer to last frame
-    int readNum; //number of pages read
-    int writeNum; // number of pages written
-} Bufferpool;
-
-long globalTime=0;
-
 //initialize the Buffer Pool
 RC initBufferPool(BM_BufferPool *const bm, const char *const pageFileName,
                   const int numPages, ReplacementStrategy strategy,
@@ -51,10 +40,9 @@ RC initBufferPool(BM_BufferPool *const bm, const char *const pageFileName,
     }
     
     //Buffer Pool information
-    BufferPool *buffPool = (BufferPool *) malloc(sizeof(BufferPool));
-    buffPool->bufferPool = bm;
-    buffPool->firstFrame = &bufferPool[0];
-    buffPool->lastFrame = &bufferPool[numPages-1];
+    BM_BufferPool *buffPool = (BM_BufferPool *) malloc(sizeof(BM_BufferPool));
+    buffPool->firstFrame = &BP[0];
+    buffPool->lastFrame = &BP[numPages-1];
     buffPool->readNum = 0;
     buffPool->writeNum = 0;
     
@@ -62,8 +50,7 @@ RC initBufferPool(BM_BufferPool *const bm, const char *const pageFileName,
     bm->pageFile = (char*) pageFileName;
     bm->numPages= numPages;
     bm->strategy = strategy;
-    bm->mgmtData = buffP;
-    globalTime = 0;
+    bm->mgmtData = buffPool;
     return RC_OK;
 }
 
@@ -71,8 +58,8 @@ RC initBufferPool(BM_BufferPool *const bm, const char *const pageFileName,
 RC shutdownBufferPool(BM_BufferPool *const bm){
     
     int numPages = bm->numPages; //get numebr of pages
-    BufferPool *buffP = bm->mgmtData;
-    Frame *bufferPool = buffP->bufferPool;
+    BM_BufferPool *buffPool = bm->mgmtData;
+    Frame *BP = buffPool->mgmtData;
     
     //get fix counts and dirty variables
     int *fixcounts = getFixCounts(bm);
@@ -84,34 +71,34 @@ RC shutdownBufferPool(BM_BufferPool *const bm){
         if (*(fixcounts + i) != 0){
             free(fixcounts);
             free(dirtyflags);
-            return RC_PINNED_PAGES;
+            return RC_PIN;
         }
         i++;
     }
     
     //Check if any frames are dirty
-    int i = 0;
+    i = 0;
     while (i < numPages){
         if (*(dirtyflags + i) == true){
             SM_FileHandle fileHandle;
             char *fileName = bm->pageFile;
             openPageFile(fileName, &fileHandle);
-            writeBlock(bufferPool[i].pageNum, &fileHandle, bufferPool[i].data);
-            buffP->writeNum++;
+            writeBlock(BP[i].pageNum, &fileHandle, BP[i].data);
+            buffPool->writeNum++;
             closePageFile(&fileHandle);
         }
         i++;
     }
     
     //free up memory and return
-    free(buffP);
+    free(buffPool);
     free(fixcounts);
     free(dirtyflags);
     return RC_OK;
 }
 
 //Force Flush
-RC forceFlushPool(BM_bufferPool *const bm){
+RC forceFlushPool(BM_BufferPool *const bm){
     
     int numPages = bm->numPages; //get number of pages
     //set up file handle and get buffer pool information
@@ -119,7 +106,7 @@ RC forceFlushPool(BM_bufferPool *const bm){
     SM_FileHandle fileHandle;
     SM_PageHandle pageHandle = (SM_PageHandle) malloc(sizeof(SM_PageHandle));
     
-    BufferPool *buffP = bm->mgmtData;
+    BM_BufferPool *buffPool = bm->mgmtData;
     //get dirty and fix counts variables
     bool *dirtyflags = getDirtyFlags(bm);
     int *fixcounts = getFixCounts(bm);
@@ -128,16 +115,18 @@ RC forceFlushPool(BM_bufferPool *const bm){
     while (i < numPages){
         if ((*(dirtyflags + i) == true) && (*(fixcounts + i) == 0)){
             //load frame and page number
-            Frame *f = &(buffP->bufferPool[i]);
+            Frame *f = &(buffPool->mgmtData[i]);
             PageNumber pageNum = f->pageNum;
             //write to file
+            SM_FileHandle fileHandle;
+            char *fileName = bm->pageFile;
             strcpy(pageHandle, f->data);
             openPageFile(fileName, &fileHandle);
             ensureCapacity(f->pageNum+1,&fileHandle);
             writeBlock(pageNum, &fileHandle, pageHandle);
             closePageFile(&fileHandle);
-            frame-dirty = false;
-            buffP->writeNum++;
+            f->dirty = false;
+            buffPool->writeNum++;
         }
         i++;
     }
