@@ -61,14 +61,10 @@ RC shutdownBufferPool(BM_BufferPool *const bm){
     
     forceFlushPool(bm);
     
-    //get fix counts
-    int *fixcounts = getFixCounts(bm);
-    
     //Make sure fix counts is 0, otherwise do not shutdown and return error
     int i = 0;
     while (i < numPages){
-        if (*(fixcounts + i) != 0){
-            free(fixcounts);
+        if (BP[i].fixCount != 0){
             return RC_PIN;
         }
         i++;
@@ -76,7 +72,6 @@ RC shutdownBufferPool(BM_BufferPool *const bm){
     
     //free up memory and return
     free(BP);
-    free(fixcounts);
     bm->mgmtData = NULL;
     return RC_OK;
 }
@@ -87,13 +82,9 @@ RC forceFlushPool(BM_BufferPool *const bm){
     int numPages = bm->numPages; //get number of pages
     Frame *BP = (Frame *)bm->mgmtData;
     
-    //get dirty and fix counts variables
-    bool *dirtyflags = getDirtyFlags(bm);
-    int *fixcounts = getFixCounts(bm);
-    
     int i = 0;
     while (i < numPages){
-        if ((*(dirtyflags + i) == 1) && (*(fixcounts + i) == 0)){
+        if ((BP[i].dirty == 1) && (BP[i].fixCount) == 0){
             //write to file
             SM_FileHandle fileHandle;
             openPageFile(bm->pageFile, &fileHandle);
@@ -105,8 +96,6 @@ RC forceFlushPool(BM_BufferPool *const bm){
         i++;
     }
     
-    free(fixcounts);
-    free(dirtyflags);
     return RC_OK;
 }
 
