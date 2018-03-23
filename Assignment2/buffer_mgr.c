@@ -3,9 +3,9 @@
 #include <string.h>
 
 #include "buffer_mgr.h"
-#include "buffer_mgr_stat.c"
+#include "buffer_mgr_stat.h"
 #include "dberror.h"
-#include "storage_mgr.c"
+#include "storage_mgr.h"
 
 //initialize the Buffer Pool
 RC initBufferPool(BM_BufferPool *const bm, const char *const pageFileName,
