@@ -28,7 +28,8 @@ typedef struct Frame{
 	bool dirty; //boolean for if the frame has been changed
 	struct Frame *previousFrame;
 	struct Frame *nextFrame;
-	long timeStamp; //time stamp
+	long timeLastUsed; //time stamp for LRU
+	long timeFirstPinned; //time stamp for FIFO
 } Frame;
 
 typedef struct BM_BufferPool {
