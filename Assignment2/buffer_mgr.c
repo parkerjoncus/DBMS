@@ -11,7 +11,7 @@ RC initBufferPool(BM_BufferPool *const bm, const char *const pageFileName,
                   const int numPages, ReplacementStrategy strategy,
                   void *stratData){
     //creates buffer pool with size of the number of pages in the frame
-    Frame *BP = (Frame *) malloc(numPages * sizeof(Frame));
+    Frame *BP = malloc(numPages * sizeof(Frame));
     
     int i=0;
     while (i < numPages){
@@ -19,7 +19,7 @@ RC initBufferPool(BM_BufferPool *const bm, const char *const pageFileName,
         BP[i].frameNum = i; //Set frame number
         BP[i].pageNum = NO_PAGE; //set to no page since initialize
         BP[i].fixCount = 0; //initialize to 0 since no access
-        BP[i].dirty = false; //initialize to false since no change
+        BP[i].dirty = 0; //initialize to false since no change
         BP[i].timeFirstPinned = 0;
         BP[i].timeLastUsed= 0;
         
@@ -40,17 +40,16 @@ RC initBufferPool(BM_BufferPool *const bm, const char *const pageFileName,
     }
     
     //Buffer Pool information
-    BM_BufferPool *buffPool = (BM_BufferPool *) malloc(sizeof(BM_BufferPool));
-    buffPool->firstFrame = &BP[0];
-    buffPool->lastFrame = &BP[numPages-1];
-    buffPool->readNum = 0;
-    buffPool->writeNum = 0;
+    bm->firstFrame = &BP[0];
+    bm->lastFrame = &BP[numPages-1];
+    bm->readNum = 0;
+    bm->writeNum = 0;
     
     //Buffer pool struct
-    bm->pageFile = (char*) pageFileName;
+    bm->pageFile = (char*)pageFileName;
     bm->numPages= numPages;
     bm->strategy = strategy;
-    bm->mgmtData = buffPool;
+    bm->mgmtData = BP;
     return RC_OK;
 }
 
@@ -86,7 +85,7 @@ RC shutdownBufferPool(BM_BufferPool *const bm){
 RC forceFlushPool(BM_BufferPool *const bm){
     
     int numPages = bm->numPages; //get number of pages
-    Frame *BP = bm->mgmtData;
+    Frame *BP = (Frame *)bm->mgmtData;
     
     //get dirty and fix counts variables
     bool *dirtyflags = getDirtyFlags(bm);
