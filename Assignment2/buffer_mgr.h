@@ -24,7 +24,7 @@ typedef struct Frame{
 	char *data; //pointer to data
 	PageNumber pageNum; //page number in the page file
 	int frameNum; //frame number in the buffer pool
-	int fixcount; //counts users reading frame
+	int fixCount; //counts users reading frame
 	bool dirty; //boolean for if the frame has been changed
 	struct Frame *previousFrame;
 	struct Frame *nextFrame;

@@ -135,8 +135,8 @@ PageNumber *getFrameContents (BM_BufferPool *const bm)
 bool *getDirtyFlags (BM_BufferPool *const bm)
 {
   bool *array =  (bool*)malloc(bm->numPages * sizeof(PageNumber));
-
-  BM_PageHandle *bufferPoolptr = bm->mgmtData;
+    Frame *bufferPoolptr = (Frame *)bm->mgmtData;
+  //BM_PageHandle *bufferPoolptr = bm->mgmtData;
 
   int i;
   for (i=0; i<bm->numPages; i++)
@@ -152,8 +152,8 @@ bool *getDirtyFlags (BM_BufferPool *const bm)
  Return 0 for empty page frames.*/
 int *getFixCounts (BM_BufferPool *const bm){
   int *array = (int *)malloc(bm->numPages * sizeof(int));
-
-  BM_PageHandle *bufferPoolptr = bm->mgmtData;
+    Frame *bufferPoolptr = (Frame *)bm->mgmtData;
+  //BM_PageHandle *bufferPoolptr = bm->mgmtData;
 
   int i;
 
@@ -172,13 +172,13 @@ int *getFixCounts (BM_BufferPool *const bm){
  is read from the page file into a page frame.*/
 int getNumReadIO (BM_BufferPool *const bm)
 {
-  return bm->numReadIO;
+  return bm->readNum;
 } //end getNumReadIO
 
 /*getNumWriteIO returns the number of pages written to the page file since the
 buffer pool has been initialized.*/
 int getNumWriteIO (BM_BufferPool *const bm)
 {
-  return bm->numWriteIO;
+  return bm->writeNum;
 
 } //end getNumWriteIO
