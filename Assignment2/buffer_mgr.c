@@ -1,6 +1,7 @@
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
+#include <time.h>
 
 #include "buffer_mgr.h"
 #include "buffer_mgr_stat.h"
@@ -21,7 +22,8 @@ RC initBufferPool(BM_BufferPool *const bm, const char *const pageFileName,
         BP[i].pageNum = NO_PAGE; //set to no page since initialize
         BP[i].fixCount = 0; //initialize to 0 since no access
         BP[i].dirty = false; //initialize to false since no change
-        BP[i].timeStamp = 0;
+        BP[i].timeFirstPinned = 0;
+        BP[i].timeLastUsed= 0;
         
         //set next and previous pointers
         if (i == 0){
@@ -127,12 +129,16 @@ Frame* findPage(BM_BufferPool *const bm, BM_PageHandle *const page){
 RC markDirty (BM_BufferPool *const bm, BM_PageHandle *const page){
     //Cycle through the frames until we find the one to mark as dirty
     Frame* frame = findPage(bm, page);
-    frame->dirty = true;
+    frame->dirty = 1;
+
+    return RC_OK;
 }
 
 RC unpinPage (BM_BufferPool *const bm, BM_PageHandle *const page){
     Frame* frame = findPage(bm, page);
     frame->fixCount--;
+
+    return RC_OK;
 }
 
 RC forcePage (BM_BufferPool *const bm, BM_PageHandle *const page){
@@ -142,6 +148,8 @@ RC forcePage (BM_BufferPool *const bm, BM_PageHandle *const page){
     Frame* frame = findPage(bm, page);
     writeBlock(frame->pageNum, &filehandle, frame->data);
     closePageFile(&filehandle);
+
+    return RC_OK;
 }
 
 bool isBufferFull(BM_BufferPool *const bm){
@@ -178,29 +186,33 @@ Frame* checkExistingFrames(BM_BufferPool *const bm, const PageNumber pageNum){
 
 RC pinPage (BM_BufferPool *const bm, BM_PageHandle *const page,
             const PageNumber pageNum){
+
+    //If frame already exists, return it
+    Frame* frame = checkExistingFrames(bm, pageNum);
+    if(frame){
+        page->pageNum = pageNum;
+        frame->fixCount++;
+        frame->timeLastUsed = (long) time(NULL); //Page is used, record time
+        page->data = frame;
+        return RC_OK;
+    }
+
     if(isBufferFull(bm)){
         //Replacement strategy comes into play
         if(bm->strategy == RS_FIFO){
-            FIFO(bm, page, pageNum);
+            return FIFO(bm, page, pageNum);
         } else if(bm->strategy == RS_LRU){
-            LRU(bm, page, pageNum);
+            return LRU(bm, page, pageNum);
         }
     } else {
-        //If frame already exists, return it
-        Frame* frame = checkExistingFrames(bm, pageNum);
-        if(frame){
-            page->pageNum = pageNum;
-            frame->fixCount++;
-            page->data = frame;
-            return RC_OK;
-        }
         //Otherwise, create it
         frame = findFreeFrame(bm);
 
         SM_FileHandle filehandle;
         openPageFile(bm->pageFile, &filehandle);
         readBlock(pageNum, &filehandle, frame->data);
-
+        frame->timeFirstPinned = (long) time(NULL); //First time the frame is used
+        frame->timeLastUsed = (long) time(NULL); //Page is used, record time
         frame->pageNum = pageNum;
         frame->fixCount++;
         page->pageNum = pageNum;
@@ -210,11 +222,53 @@ RC pinPage (BM_BufferPool *const bm, BM_PageHandle *const page,
 }
 
 RC FIFO(BM_BufferPool *const bm, BM_PageHandle *const page, PageNumber pageNum){
-    //Replacement logic, should set pageNum to NO_PAGE
+    //Replacement logic
+    Frame* frames = (Frame *) bm->mgmtData;
+    Frame* firstIn = &frames[0];
+
+    for(int i=0;i<bm->numPages;++i){
+        if(frames[i].timeFirstPinned < firstIn->timeFirstPinned){
+            if((frames[i].dirty == false)&(frames[i].fixCount == 0)){
+                firstIn = &frames[i];
+            }
+        }
+    }
+
+    SM_FileHandle filehandle;
+    openPageFile(bm->pageFile, &filehandle);
+    readBlock(pageNum, &filehandle, firstIn->data);
+    firstIn->timeFirstPinned = (long) time(NULL); //First time the frame is used
+    firstIn->timeLastUsed = (long) time(NULL); //Page is used, record time
+    firstIn->pageNum = pageNum;
+    firstIn->fixCount++;
+    page->pageNum = pageNum;
+    page->data = firstIn;
+
     return RC_OK;
 }
 
 RC LRU(BM_BufferPool *const bm, BM_PageHandle *const page, PageNumber pageNum){
-    //Replacement logic, should set pageNum to NO_PAGE
+    //Replacement logic
+    Frame* frames = (Frame *) bm->mgmtData;
+    Frame* leastRecUsed = &frames[0];
+
+    for(int i=0;i<bm->numPages;++i){
+        if(frames[i].timeLastUsed < leastRecUsed->timeLastUsed){
+            if((frames[i].dirty == false)&(frames[i].fixCount == 0)){
+                leastRecUsed = &frames[i];
+            }
+        }
+    }
+
+    SM_FileHandle filehandle;
+    openPageFile(bm->pageFile, &filehandle);
+    readBlock(pageNum, &filehandle, leastRecUsed->data);
+    leastRecUsed->timeFirstPinned = (long) time(NULL); //First time the frame is used
+    leastRecUsed->timeLastUsed = (long) time(NULL); //Page is used, record time
+    leastRecUsed->pageNum = pageNum;
+    leastRecUsed->fixCount++;
+    page->pageNum = pageNum;
+    page->data = leastRecUsed;
+    
     return RC_OK;
 }
