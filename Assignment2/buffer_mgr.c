@@ -58,42 +58,27 @@ RC initBufferPool(BM_BufferPool *const bm, const char *const pageFileName,
 RC shutdownBufferPool(BM_BufferPool *const bm){
     
     int numPages = bm->numPages; //get numebr of pages
-    BM_BufferPool *buffPool = bm->mgmtData;
-    Frame *BP = buffPool->mgmtData;
+    Frame *BP = bm->mgmtData;
     
-    //get fix counts and dirty variables
+    forceFlushPool(bm);
+    
+    //get fix counts
     int *fixcounts = getFixCounts(bm);
-    bool *dirtyflags = getDirtyFlags(bm);
     
     //Make sure fix counts is 0, otherwise do not shutdown and return error
     int i = 0;
     while (i < numPages){
         if (*(fixcounts + i) != 0){
             free(fixcounts);
-            free(dirtyflags);
             return RC_PIN;
         }
         i++;
     }
     
-    //Check if any frames are dirty
-    i = 0;
-    while (i < numPages){
-        if (*(dirtyflags + i) == true){
-            SM_FileHandle fileHandle;
-            char *fileName = bm->pageFile;
-            openPageFile(fileName, &fileHandle);
-            writeBlock(BP[i].pageNum, &fileHandle, BP[i].data);
-            buffPool->writeNum++;
-            closePageFile(&fileHandle);
-        }
-        i++;
-    }
-    
     //free up memory and return
-    free(buffPool);
+    free(BP);
     free(fixcounts);
-    free(dirtyflags);
+    bm->mgmtData = NULL;
     return RC_OK;
 }
 
@@ -101,12 +86,8 @@ RC shutdownBufferPool(BM_BufferPool *const bm){
 RC forceFlushPool(BM_BufferPool *const bm){
     
     int numPages = bm->numPages; //get number of pages
-    //set up file handle and get buffer pool information
-    char *file = bm->pageFile;
-    SM_FileHandle fileHandle;
-    SM_PageHandle pageHandle = (SM_PageHandle) malloc(sizeof(SM_PageHandle));
+    Frame *BP = bm->mgmtData;
     
-    BM_BufferPool *buffPool = bm->mgmtData;
     //get dirty and fix counts variables
     bool *dirtyflags = getDirtyFlags(bm);
     int *fixcounts = getFixCounts(bm);
@@ -114,19 +95,17 @@ RC forceFlushPool(BM_BufferPool *const bm){
     int i = 0;
     while (i < numPages){
         if ((*(dirtyflags + i) == true) && (*(fixcounts + i) == 0)){
-            //load frame and page number
-            Frame *f = &(buffPool->mgmtData[i]);
+            //load current frame and page number
+            Frame *f = &(BP->mgmtData[i]);
             PageNumber pageNum = f->pageNum;
             //write to file
             SM_FileHandle fileHandle;
-            char *fileName = bm->pageFile;
-            strcpy(pageHandle, f->data);
-            openPageFile(fileName, &fileHandle);
+            openPageFile(bm->pageFile, &fileHandle);
             ensureCapacity(f->pageNum+1,&fileHandle);
-            writeBlock(pageNum, &fileHandle, pageHandle);
+            writeBlock(pageNum, &fileHandle, BP[i].data);
             closePageFile(&fileHandle);
-            f->dirty = false;
-            buffPool->writeNum++;
+            BP[i]->dirty = false;
+            bm->writeNum++;
         }
         i++;
     }
