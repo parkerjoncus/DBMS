@@ -20,12 +20,27 @@ typedef enum ReplacementStrategy {
 typedef int PageNumber;
 #define NO_PAGE -1
 
+typedef struct Frame{
+	char *data; //pointer to data
+	PageNumber pageNum; //page number in the page file
+	int frameNum; //frame number in the buffer pool
+	int fixcount; //counts users reading frame
+	bool dirty; //boolean for if the frame has been changed
+	struct Frame *previousFrame;
+	struct Frame *nextFrame;
+	long timeStamp; //time stamp
+} Frame;
+
 typedef struct BM_BufferPool {
 	char *pageFile;
 	int numPages;
 	ReplacementStrategy strategy;
 	void *mgmtData; // use this one to store the bookkeeping info your buffer
 	// manager needs for a buffer pool
+	Frame *firstFrame; //pointer to first frame
+	Frame *lastFrame; //pointer to last frame
+	int readNum; //number of pages read
+	int writeNum; // number of pages written
 } BM_BufferPool;
 
 typedef struct BM_PageHandle {
@@ -53,6 +68,10 @@ RC unpinPage (BM_BufferPool *const bm, BM_PageHandle *const page);
 RC forcePage (BM_BufferPool *const bm, BM_PageHandle *const page);
 RC pinPage (BM_BufferPool *const bm, BM_PageHandle *const page, 
 		const PageNumber pageNum);
+Frame* findPage(BM_BufferPool *const bm, BM_PageHandle *const page);
+bool isBufferFull(BM_BufferPool *const bm);
+Frame* findFreeFrame(BM_BufferPool *const bm);
+Frame* checkExistingFrames(BM_BufferPool *const bm, const PageNumber pageNum);
 
 // Statistics Interface
 PageNumber *getFrameContents (BM_BufferPool *const bm);
