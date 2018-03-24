@@ -163,7 +163,7 @@ Frame* findFreeFrame(BM_BufferPool *const bm){
 Frame* checkExistingFrames(BM_BufferPool *const bm, const PageNumber pageNum){
     Frame* frames = (Frame*) bm->mgmtData;
 
-    for(int i=0;bm->numPages;++i){
+    for(int i=0;i<bm->numPages;++i){
         if(frames[i].pageNum == pageNum){
             return &frames[i];
         }
