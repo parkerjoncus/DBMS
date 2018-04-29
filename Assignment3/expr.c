@@ -14,24 +14,24 @@ valueEquals (Value *left, Value *right, Value *answer)
     THROW(RC_RM_COMPARE_VALUE_OF_DIFFERENT_DATATYPE, "balance examination supported for estimations of the same datatype");
 
   answer->dt = DT_BOOL;
-  
+   
   switch(left->dt) {
-  if(left->dt == DT_INT){
+  else if(left->dt == DT_INT){
       answer->v.boolV = (left->v.intV == right->v.intV);
   }
   //case DT_INT:
     break;
-  if(left->dt == DT_FLOAT){
+  else if(left->dt == DT_FLOAT){
       answer->v.boolV = (left->v.floatV == right->v.floatV);
   }
   //case DT_FLOAT:
     break;
-  if(left->dt == DT_BOOL{
+ else if(left->dt == DT_BOOL{
       answer->v.boolV = (left->v.boolV == right->v.boolV);
   }
   //case DT_BOOL:
     break;
-  if(left->dt == DT_STRING){
+ else if(left->dt == DT_STRING){
       answer->v.boolV = (strcmp(left->v.stringV, right->v.stringV) == 0);
   }
   //case DT_STRING:
@@ -55,17 +55,17 @@ valueSmaller (Value *left, Value *right, Value *answer)
   }
   //case DT_INT:
     break;
-  if(left->dt == DT_FLOAT){
+ else if(left->dt == DT_FLOAT){
       answer->v.boolV = (left->v.floatV < right->v.floatV);
   }
   //case DT_FLOAT:
     break;
-  if(left->dt == DT_BOOL){
+ else if(left->dt == DT_BOOL){
       answer->v.boolV = (left->v.boolV < right->v.boolV);
   }
   break;
   //case DT_BOOL:
-  if(left->dt == DT_STRING){
+ else if(left->dt == DT_STRING){
       answer->v.boolV = (strcmp(left->v.stringV, right->v.stringV) < 0);
   }
   //case DT_STRING:
@@ -187,13 +187,13 @@ freeExpr (Expr *expr)
       free(op->args);
       }
       break;
-    if(expr->type == EXPR_CONST){
+   else if(expr->type == EXPR_CONST){
     //case EXPR_CONST:
       freeVal(expr->expr.cons);
       }
       break;
     //case EXPR_ATTRREF:
-      if(expr->type == EXPR_ATTRREF){
+   else   if(expr->type == EXPR_ATTRREF){
       cout<<" ";
       }
       break;
