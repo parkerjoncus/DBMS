@@ -8,25 +8,33 @@
 
 // implementations
 RC 
-valueEquals (Value *left, Value *right, Value *result)
+valueEquals (Value *left, Value *right, Value *answer)
 {
   if(left->dt != right->dt)
-    THROW(RC_RM_COMPARE_VALUE_OF_DIFFERENT_DATATYPE, "equality comparison only supported for values of the same datatype");
+    THROW(RC_RM_COMPARE_VALUE_OF_DIFFERENT_DATATYPE, "balance examination supported for estimations of the same datatype");
 
-  result->dt = DT_BOOL;
+  answer->dt = DT_BOOL;
   
   switch(left->dt) {
-  case DT_INT:
-    result->v.boolV = (left->v.intV == right->v.intV);
+  if(left->dt == DT_INT){
+      answer->v.boolV = (left->v.intV == right->v.intV);
+  }
+  //case DT_INT:
     break;
-  case DT_FLOAT:
-    result->v.boolV = (left->v.floatV == right->v.floatV);
+  if(left->dt == DT_FLOAT){
+      answer->v.boolV = (left->v.floatV == right->v.floatV);
+  }
+  //case DT_FLOAT:
     break;
-  case DT_BOOL:
-    result->v.boolV = (left->v.boolV == right->v.boolV);
+  if(left->dt == DT_BOOL{
+      answer->v.boolV = (left->v.boolV == right->v.boolV);
+  }
+  //case DT_BOOL:
     break;
-  case DT_STRING:
-    result->v.boolV = (strcmp(left->v.stringV, right->v.stringV) == 0);
+  if(left->dt == DT_STRING){
+      answer->v.boolV = (strcmp(left->v.stringV, right->v.stringV) == 0);
+  }
+  //case DT_STRING:
     break;
   }
 
@@ -34,24 +42,33 @@ valueEquals (Value *left, Value *right, Value *result)
 }
 
 RC 
-valueSmaller (Value *left, Value *right, Value *result)
+valueSmaller (Value *left, Value *right, Value *answer)
 {
   if(left->dt != right->dt)
-    THROW(RC_RM_COMPARE_VALUE_OF_DIFFERENT_DATATYPE, "equality comparison only supported for values of the same datatype");
+    THROW(RC_RM_COMPARE_VALUE_OF_DIFFERENT_DATATYPE, "balance examination supported for estimations of the same datatype");
 
-  result->dt = DT_BOOL;
+  answer->dt = DT_BOOL;
   
   switch(left->dt) {
-  case DT_INT:
-    result->v.boolV = (left->v.intV < right->v.intV);
+  if(left->dt == DT_INT){
+      answer->v.boolV = (left->v.intV < right->v.intV);
+  }
+  //case DT_INT:
     break;
-  case DT_FLOAT:
-    result->v.boolV = (left->v.floatV < right->v.floatV);
+  if(left->dt == DT_FLOAT){
+      answer->v.boolV = (left->v.floatV < right->v.floatV);
+  }
+  //case DT_FLOAT:
     break;
-  case DT_BOOL:
-    result->v.boolV = (left->v.boolV < right->v.boolV);
-  case DT_STRING:
-    result->v.boolV = (strcmp(left->v.stringV, right->v.stringV) < 0);
+  if(left->dt == DT_BOOL){
+      answer->v.boolV = (left->v.boolV < right->v.boolV);
+  }
+  break;
+  //case DT_BOOL:
+  if(left->dt == DT_STRING){
+      answer->v.boolV = (strcmp(left->v.stringV, right->v.stringV) < 0);
+  }
+  //case DT_STRING:
     break;
   }
 
@@ -59,42 +76,42 @@ valueSmaller (Value *left, Value *right, Value *result)
 }
 
 RC 
-boolNot (Value *input, Value *result)
+boolNot (Value *input, Value *answer)
 {
   if (input->dt != DT_BOOL)
     THROW(RC_RM_BOOLEAN_EXPR_ARG_IS_NOT_BOOLEAN, "boolean NOT requires boolean input");
-  result->dt = DT_BOOL;
-  result->v.boolV = !(input->v.boolV);
+  answer->dt = DT_BOOL;
+  answer->v.boolV = !(input->v.boolV);
 
   return RC_OK;
 }
 
 RC
-boolAnd (Value *left, Value *right, Value *result)
+boolAnd (Value *left, Value *right, Value *answer)
 {
   if (left->dt != DT_BOOL || right->dt != DT_BOOL)
     THROW(RC_RM_BOOLEAN_EXPR_ARG_IS_NOT_BOOLEAN, "boolean AND requires boolean inputs");
-  result->v.boolV = (left->v.boolV && right->v.boolV);
+  answer->v.boolV = (left->v.boolV && right->v.boolV);
 
   return RC_OK;
 }
 
 RC
-boolOr (Value *left, Value *right, Value *result)
+boolOr (Value *left, Value *right, Value *answer)
 {
   if (left->dt != DT_BOOL || right->dt != DT_BOOL)
     THROW(RC_RM_BOOLEAN_EXPR_ARG_IS_NOT_BOOLEAN, "boolean OR requires boolean inputs");
-  result->v.boolV = (left->v.boolV || right->v.boolV);
+  answer->v.boolV = (left->v.boolV || right->v.boolV);
 
   return RC_OK;
 }
 
 RC
-evalExpr (Record *record, Schema *schema, Expr *expr, Value **result)
+evalExpr (Record *record, Schema *schema, Expr *expr, Value **answer)
 {
   Value *lIn;
   Value *rIn;
-  MAKE_VALUE(*result, DT_INT, -1);
+  MAKE_VALUE(*answer, DT_INT, -1);
 
   switch(expr->type)
     {
@@ -112,19 +129,19 @@ evalExpr (Record *record, Schema *schema, Expr *expr, Value **result)
       switch(op->type) 
 	{
 	case OP_BOOL_NOT:
-	  CHECK(boolNot(lIn, *result));
+	  CHECK(boolNot(lIn, *answer));
 	  break;
 	case OP_BOOL_AND:
-	  CHECK(boolAnd(lIn, rIn, *result));
+	  CHECK(boolAnd(lIn, rIn, *answer));
 	  break;
 	case OP_BOOL_OR:
-	  CHECK(boolOr(lIn, rIn, *result));
+	  CHECK(boolOr(lIn, rIn, *answer));
 	  break;
 	case OP_COMP_EQUAL:
-	  CHECK(valueEquals(lIn, rIn, *result));
+	  CHECK(valueEquals(lIn, rIn, *answer));
 	  break;
 	case OP_COMP_SMALLER:
-	  CHECK(valueSmaller(lIn, rIn, *result));
+	  CHECK(valueSmaller(lIn, rIn, *answer));
 	  break;
 	default:
 	  break;
@@ -137,11 +154,11 @@ evalExpr (Record *record, Schema *schema, Expr *expr, Value **result)
       }
       break;
     case EXPR_CONST:
-      CPVAL(*result,expr->expr.cons);
+      CPVAL(*answer,expr->expr.cons);
       break;
     case EXPR_ATTRREF:
-      free(*result);
-      CHECK(getAttr(record, schema, expr->expr.attrRef, result));
+      free(*answer);
+      CHECK(getAttr(record, schema, expr->expr.attrRef, answer));
       break;
     }
 
@@ -153,26 +170,32 @@ freeExpr (Expr *expr)
 {
   switch(expr->type) 
     {
-    case EXPR_OP:
+    if(expr->type == EXPR_OP)
+    //case EXPR_OP:
       {
       Operator *op = expr->expr.op;
       switch(op->type) 
 	{
-	case OP_BOOL_NOT:
-	  freeExpr(op->args[0]);
-	  break;
-	default:
-	  freeExpr(op->args[0]);
-	  freeExpr(op->args[1]);
-	  break;
+		case OP_BOOL_NOT:
+	  		freeExpr(op->args[0]);
+	  	break;
+		default:
+	  		freeExpr(op->args[0]);
+	  		freeExpr(op->args[1]);
+	  	break;
 	}
       free(op->args);
       }
       break;
-    case EXPR_CONST:
+    if(expr->type == EXPR_CONST){
+    //case EXPR_CONST:
       freeVal(expr->expr.cons);
+      }
       break;
-    case EXPR_ATTRREF:
+    //case EXPR_ATTRREF:
+      if(expr->type == EXPR_ATTRREF){
+      cout<<" ";
+      }
       break;
     }
   free(expr);
