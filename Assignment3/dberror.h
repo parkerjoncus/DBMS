@@ -49,6 +49,10 @@ typedef int RC; // return code: typedef to int
 #define RC_IM_N_TO_LAGE 302
 #define RC_IM_NO_MORE_ENTRIES 303
 
+#define RC_TABLE_NOT_FOUND 400
+#define RC_TABLE_ALREADY_EXISTS 401
+#define RC_WRITE_FAILED 402
+
 /* holder for error messages */
 extern char *RC_message;
 

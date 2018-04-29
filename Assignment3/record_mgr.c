@@ -485,7 +485,7 @@ extern RC createTable (char *name, Schema *schema){
     /* Check if table already exists*/
 
     if( access(name, F_OK) != -1 ) {
-        return RC_TABLE_ALREADY_EXITS;
+        return RC_TABLE_ALREADY_EXISTS;
     }
 
     int status;
