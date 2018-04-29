@@ -486,24 +486,34 @@ extern RC createTable (char *name, Schema *schema){
     /* Check if table already exists*/
 
     if( access(name, F_OK) != -1 ) {
+        printf("Method Access Return Fail\n");
         return RC_TABLE_ALREADY_EXITS;
     }
 
     int status;
     SM_FileHandle fh;
     /* Create a file with the given name and create pages for info and schema*/
-    if ((status=createPageFile(name)) != RC_OK)
+    if ((status=createPageFile(name)) != RC_OK) {
+
+        printf("Crea Page File Returned Fail\n" );
         return status;
+
+      }
 
     int schema_size = getSchemaSize(schema);
     int slot_size = slotSize(schema);
     int file_size = (int) ceil((float)schema_size/PAGE_SIZE);
     int max_slots = (int) floor((float)PAGE_SIZE/(float)slot_size);
 
-    if ((status=openPageFile(name, &fh)) != RC_OK)
-        return status;
+    if ((status=openPageFile(name, &fh)) != RC_OK){
+      printf("Ensure Capacity  Return Fail\n" );
+      return status;
+    }
+
 
     if ((status=ensureCapacity((file_size + 1), &fh)) != RC_OK){
+      printf("Ensure Capacity  Return Fail\n" );
+
         return status;
     }
     /* First page with file info*/
@@ -518,14 +528,20 @@ extern RC createTable (char *name, Schema *schema){
 
     char *info_str = tableInfoToStr(info);
     if ((status=writeBlock(0, &fh, info_str)) != RC_OK)
+        printf("Write Block File Return Fail at Line 521\n" );
         return status;
 
     /* From next page, write the schema*/
     char *schema_str = serializeSchema(schema);
-    if ((status=writeBlock(1, &fh, schema_str)) != RC_OK)
+    if ((status=writeBlock(1, &fh, schema_str)) != RC_OK){
+      printf("Write Block File Return Fail at Line 527\n" );
+      return status;
+    }
+
+    if ((status=closePageFile(&fh)) != RC_OK){
+        printf("Close Page File Return Fail\n" );
         return status;
-    if ((status=closePageFile(&fh)) != RC_OK)
-        return status;
+      }
 
     return RC_OK;
 }
