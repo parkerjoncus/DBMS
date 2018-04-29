@@ -4,8 +4,8 @@
 // define bool if not defined
 #ifndef bool
     typedef short bool;
-#define true 1
-#define false 0
+    #define true 1
+    #define false 0
 #endif
 
 #define TRUE true
