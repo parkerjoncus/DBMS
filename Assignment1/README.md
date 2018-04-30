@@ -1,4 +1,3 @@
-<<<<<<< HEAD
 # CS525assignment1
 assignment 1. read/write block to file on disk
 
@@ -8,10 +7,11 @@ Eddie - The writes section and testing.
 Yohann - The reads and testing.
 Parker - The file creation and handling.
 Ashwani - Testing and makefile.
+All- Met to fix errors, split tasks and discuss many aspects of the assignment.
 
 2. Do we Need More Tests?
 Yes, not all of the methods in my section were covered. I added a test to trigger all of my methods.
-I uncovered and error and added ensureCapacity to every write by adding it to one method.
+I uncovered an error and added ensureCapacity to every write by adding it to one method.
 
 3. Ideas behind our Methods?
 The idea was simplicity. We came up with how the system was going to function and based our structure of the
@@ -21,12 +21,10 @@ have correct information.
 4. Commenting the code. See code.
 
 5. Linux Compiling
-   Make
-   ./executablename
+Make
+./TestAssn1
 
-   UNIX Compiling
-=======
-# CS525
-Coding assignments for Illinois Tech's CS 525 Database Management Systems.
-These codes were created by Parker Joncus, Ashwani Panwar, Edgar Gangware, and Yohann Fallourd.
->>>>>>> origin/master
+6. Windows Compiling
+Type the following two commands in the command-line tool (make sure you are in the project directory)
+>make TestAssn1
+>TestAssn1.exe
