@@ -6,6 +6,98 @@
 #include "buffer_mgr.h"
 #include "storage_mgr.h"
 #include "record_mgr.h"
+
+/*rm_serializer file is copied here for some extra serialization.*/
+
+typedef struct VarString {
+    char *buf;
+    int size;
+    int bufsize;
+} VarString;
+
+#define MAKE_VARSTRING(var)				\
+do {							\
+var = (VarString *) malloc(sizeof(VarString));	\
+var->size = 0;					\
+var->bufsize = 100;					\
+var->buf = malloc(100);				\
+} while (0)
+
+#define FREE_VARSTRING(var)			\
+do {						\
+free(var->buf);				\
+free(var);					\
+} while (0)
+
+#define GET_STRING(result, var)			\
+do {						\
+result = malloc((var->size) + 1);		\
+memcpy(result, var->buf, var->size);	\
+result[var->size] = '\0';			\
+} while (0)
+
+#define RETURN_STRING(var)			\
+do {						\
+char *resultStr;				\
+GET_STRING(resultStr, var);			\
+FREE_VARSTRING(var);			\
+return resultStr;				\
+} while (0)
+
+#define ENSURE_SIZE(var,newsize)				\
+do {								\
+if (var->bufsize < newsize)					\
+{								\
+int newbufsize = var->bufsize;				\
+while((newbufsize *= 2) < newsize);			\
+var->buf = realloc(var->buf, newbufsize);			\
+}								\
+} while (0)
+
+#define APPEND_STRING(var,string)					\
+do {									\
+ENSURE_SIZE(var, var->size + strlen(string));			\
+memcpy(var->buf + var->size, string, strlen(string));		\
+var->size += strlen(string);					\
+} while(0)
+
+#define APPEND(var, ...)			\
+do {						\
+char *tmp = malloc(10000);			\
+sprintf(tmp, __VA_ARGS__);			\
+APPEND_STRING(var,tmp);			\
+free(tmp);					\
+} while(0)
+
+/* copied from rm_serializer file for attribute functions */
+RC
+attrOffset (Schema *schema, int attrNum, int *result)
+{
+    int offset = 0;
+    int attrPos = 0;
+
+    for(attrPos = 0; attrPos < attrNum; attrPos++)
+        switch (schema->dataTypes[attrPos])
+    {
+        case DT_STRING:
+            offset += schema->typeLength[attrPos];
+            break;
+        case DT_INT:
+            offset += sizeof(int);
+            break;
+        case DT_FLOAT:
+            offset += sizeof(float);
+            break;
+        case DT_BOOL:
+            offset += sizeof(bool);
+            break;
+    }
+
+    *result = offset;
+    return RC_OK;
+}
+
+
 /* Used in scan functions*/
 typedef struct recordInfo {
     Expr *cond;
@@ -44,28 +136,17 @@ int slotSize(Schema *schema){
 
     for(i=0; i<schema->numAttr; ++i){
         switch (schema->dataTypes[i]){
-            if(schema->dataTypes[i] == DT_STRING){
-                            tempSize = schema->typeLength[i];
-            }
-            //case DT_STRING:
+            case DT_STRING:
+                tempSize = schema->typeLength[i];
                 break;
-            else if(schema->dataTypes[i] == DT_INT){
-                            tempSize = 5;
-            }
-                        
-            //case DT_INT:
+            case DT_INT:
+                tempSize = 5;
                 break;
-            else if(schema->dataTypes[i] == DT_FLOAT){
-                            tempSize = 10;
-            }
-
-            //case DT_FLOAT:
+            case DT_FLOAT:
+                tempSize = 10;
                 break;
-            else  if(schema->dataTypes[i] == DT_BOOL){
-                            tempSize = 5;
-            }
-
-            //case DT_BOOL:
+            case DT_BOOL:
+                tempSize = 5;
                 break;
             default:
                 break;
@@ -224,7 +305,7 @@ Record *deserializeRecord(char *record_str, RM_TableData *rel){
 
         /* set attribute values as per the attributes datatype */
         switch(schema->dataTypes[i]){
-            if(schema->dataTypes[i] == DT_INT)
+            case DT_INT:
             {
 
                 int val = strtol(temp1, &temp2, 10);
@@ -234,14 +315,14 @@ Record *deserializeRecord(char *record_str, RM_TableData *rel){
 		freeVal(value);
             }
                 break;
-            else if(schema->dataTypes[i] == DT_STRING)
+            case DT_STRING:
             {
                 MAKE_STRING_VALUE(value, temp1);
                 setAttr (record, schema, i, value);
 		freeVal(value);
             }
                 break;
-            else if(schema->dataTypes[i] == DT_FLOAT)
+            case DT_FLOAT:
             {
                 float val = strtof(temp1, NULL);
                 MAKE_VALUE(value, DT_FLOAT, val);
@@ -249,7 +330,7 @@ Record *deserializeRecord(char *record_str, RM_TableData *rel){
 		freeVal(value);
             }
                 break;
-            else if(schema->dataTypes[i] == DT_BOOL)
+            case DT_BOOL:
             {
                 bool val;
                 val = (temp1[0] == 't') ? TRUE : FALSE;
@@ -743,21 +824,17 @@ extern int getRecordSize (Schema *schema){
 
     for(i=0; i<schema->numAttr; ++i){
         switch (schema->dataTypes[i]){
-            if(schema->dataTypes[i] == DT_STRING){
-                            tempSize = schema->typeLength[i];
-}
+            case DT_STRING:
+                tempSize = schema->typeLength[i];
                 break;
-            else if(tempSize = schema->typeLength[i] == DT_INT){
-                            tempSize = sizeof(int);
-            }
+            case DT_INT:
+                tempSize = sizeof(int);
                 break;
-            else if(tempSize = sizeof(int) == DT_FLOAT){
-                            tempSize = sizeof(float);
-            }
+            case DT_FLOAT:
+                tempSize = sizeof(float);
                 break;
-            else if(tempSize = sizeof(float) == DT_BOOL){
-                            tempSize = sizeof(bool);
-            }
+            case DT_BOOL:
+                tempSize = sizeof(bool);
                 break;
             default:
                 break;
@@ -814,12 +891,12 @@ extern RC getAttr (Record *record, Schema *schema, int attrNum, Value **value){
 	/* attribute data is assigned to the value pointer as per the different data types */
     switch(schema->dataTypes[attrNum])
     {
-        if(schema->dataTypes[attrNum] == DT_INT)
+        case DT_INT:
         {
             memcpy(&((*value)->v.intV),attrData, sizeof(int));
         }
             break;
-        else if(schema->dataTypes[attrNum] == DT_STRING)
+        case DT_STRING:
         {
             int len = schema->typeLength[attrNum];
             char *stringV;
@@ -833,12 +910,12 @@ extern RC getAttr (Record *record, Schema *schema, int attrNum, Value **value){
             //free(stringV);
         }
             break;
-        else if(schema->dataTypes[attrNum] == DT_FLOAT)
+        case DT_FLOAT:
         {
             memcpy(&((*value)->v.floatV),attrData, sizeof(float));
         }
             break;
-        else if(schema->dataTypes[attrNum] == DT_BOOL)
+        case DT_BOOL:
         {
             memcpy(&((*value)->v.boolV),attrData, sizeof(bool));
         }
@@ -859,12 +936,12 @@ extern RC setAttr (Record *record, Schema *schema, int attrNum, Value *value){
      /* set attribute values as per the attributes datatype */
     switch(schema->dataTypes[attrNum])
     {
-        if(schema->dataTypes[attrNum] == DT_INT)
+        case DT_INT:
         {
             memcpy(attrData,&(value->v.intV), sizeof(int));
         }
             break;
-        else if(schema->dataTypes[attrNum] == DT_STRING)
+        case DT_STRING:
         {
             char *stringV;
             int len = schema->typeLength[attrNum];
@@ -873,12 +950,12 @@ extern RC setAttr (Record *record, Schema *schema, int attrNum, Value *value){
             memcpy(attrData,(stringV), len);
         }
             break;
-        else if(schema->dataTypes[attrNum] == DT_FLOAT)
+        case DT_FLOAT:
         {
             memcpy(attrData,&((value->v.floatV)), sizeof(float));
         }
             break;
-        else if(schema->dataTypes[attrNum] == DT_BOOL)
+        case DT_BOOL:
         {
             memcpy(attrData,&((value->v.boolV)), sizeof(bool));
         }
