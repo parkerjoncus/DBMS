@@ -9,21 +9,21 @@
 
 /*rm_serializer file is copied here for some extra serialization.*/
 
-typedef struct VarString {
+typedef struct variableStr {
     char *buf;
     int size;
     int bufsize;
-} VarString;
+} variableStr;
 
-#define MAKE_VARSTRING(var)				\
+#define MAKE_VARIABLESTR(var)				\
 do {							\
-var = (VarString *) malloc(sizeof(VarString));	\
+var = (variableStr *) malloc(sizeof(variableStr));	\
 var->size = 0;					\
 var->bufsize = 100;					\
 var->buf = malloc(100);				\
 } while (0)
 
-#define FREE_VARSTRING(var)			\
+#define FREE_VARIABLESTR(var)			\
 do {						\
 free(var->buf);				\
 free(var);					\
@@ -40,7 +40,7 @@ result[var->size] = '\0';			\
 do {						\
 char *resultStr;				\
 GET_STRING(resultStr, var);			\
-FREE_VARSTRING(var);			\
+FREE_VARIABLESTR(var);			\
 return resultStr;				\
 } while (0)
 
@@ -99,14 +99,14 @@ attrOffset (Schema *schema, int attrNum, int *result)
 
 
 /* Used in scan functions*/
-typedef struct recordInfo {
+typedef struct recInfo {
     Expr *cond;
-    int curSlot;
-    int curPage;
+    int Slot;
+    int Page;
     int numPages;
     int numSlots;
 
-}recordInfo;
+}recInfo;
 
 /* list of tombstones */
 typedef struct tNode {
@@ -116,7 +116,7 @@ typedef struct tNode {
 
 /* record_mgr starts. */
 
-typedef struct tableInfo{
+typedef struct tabInfo{
 
     int schemaLength;
     int recordStartPage;
@@ -127,7 +127,7 @@ typedef struct tableInfo{
     int tNodeLen;
     tNode *tstone_root;
     BM_BufferPool *bm;
-}tableInfo;
+}tabInfo;
 
 
 int slotSize(Schema *schema){
@@ -156,9 +156,9 @@ int slotSize(Schema *schema){
     return slot_size;
 }
 
-char *tableInfoToStr(tableInfo *info){
-    VarString *result;
-    MAKE_VARSTRING(result);
+char *tabInfoToStr(tabInfo *info){
+    variableStr *result;
+    MAKE_VARIABLESTR(result);
     APPEND(result, "SchemaLength <%i> FirstRecordPage <%i> LastRecordPage <%i> NumTuples <%i> SlotSize <%i> MaxSlots <%i> ", info->schemaLength, info->recordStartPage, info->recordLastPage, info->numTuples, info->slotSize, info->maxSlots);
     tNode *temp_root;
     temp_root = info->tstone_root;
@@ -182,8 +182,8 @@ char *tableInfoToStr(tableInfo *info){
 
 }
 
-tableInfo *strToTableInfo(char *info_str){
-    tableInfo *info = (tableInfo*) malloc(sizeof(tableInfo));
+tabInfo *strTotabInfo(char *info_str){
+    tabInfo *info = (tabInfo*) malloc(sizeof(tabInfo));
 
     char info_data[strlen(info_str)];
     strcpy(info_data, info_str);
@@ -274,7 +274,7 @@ Record *deserializeRecord(char *record_str, RM_TableData *rel){
 
     Schema *schema = rel->schema;
     Record *record = (Record *) malloc(sizeof(Record));
-    tableInfo *info = (tableInfo *) (rel->mgmtData);
+    tabInfo *info = (tabInfo *) (rel->mgmtData);
     Value *value;
     record->data = (char *)malloc(sizeof(char) * info->slotSize);
     char record_data[strlen(record_str)];
@@ -444,7 +444,7 @@ Schema *deserializeSchema(char *schema_str){
 }
 
 
-RC tableInfoToFile(char *name, tableInfo *info){
+RC tabInfoToFile(char *name, tabInfo *info){
 
     if(access(name, F_OK) == -1) {
         return RC_TABLE_NOT_FOUND;
@@ -457,7 +457,7 @@ RC tableInfoToFile(char *name, tableInfo *info){
         return status;
     }
 
-    char *info_str = tableInfoToStr(info);
+    char *info_str = tabInfoToStr(info);
     if ((status=writeBlock(0, &fh, info_str)) != RC_OK){
         free(info_str);
         return status;
@@ -506,7 +506,7 @@ extern RC createTable (char *name, Schema *schema){
         return status;
     }
     /* First page with file info*/
-    tableInfo *info = (tableInfo *) malloc(sizeof(tableInfo));
+    tabInfo *info = (tabInfo *) malloc(sizeof(tabInfo));
     info->numTuples = 0;
     info->schemaLength = schema_size;
     info->recordStartPage = file_size + 1;
@@ -515,7 +515,7 @@ extern RC createTable (char *name, Schema *schema){
     info->maxSlots = max_slots;
     info->tstone_root = NULL;
 
-    char *info_str = tableInfoToStr(info);
+    char *info_str = tabInfoToStr(info);
     if ((status=writeBlock(0, &fh, info_str)) != RC_OK)
         return status;
 
@@ -542,7 +542,7 @@ extern RC openTable (RM_TableData *rel, char *name){
     initBufferPool(bm, name, 3, RS_FIFO, NULL);
     pinPage(bm, page, 0);
 
-    tableInfo *info = strToTableInfo(page->data);
+    tabInfo *info = strTotabInfo(page->data);
 
     if(info->schemaLength < PAGE_SIZE){
         pinPage(bm, page, 1);
@@ -561,7 +561,7 @@ extern RC openTable (RM_TableData *rel, char *name){
 
 extern RC closeTable (RM_TableData *rel){
 
-    shutdownBufferPool(((tableInfo *)rel->mgmtData)->bm);
+    shutdownBufferPool(((tabInfo *)rel->mgmtData)->bm);
     free(rel->mgmtData);
 
     free(rel->schema->dataTypes);
@@ -588,13 +588,13 @@ extern RC deleteTable (char *name){
 }
 
 extern int getNumTuples (RM_TableData *rel){
-    return ((tableInfo *)rel->mgmtData)->numTuples;
+    return ((tabInfo *)rel->mgmtData)->numTuples;
 }
 
 // handling records in a table
 extern RC insertRecord (RM_TableData *rel, Record *record){
     BM_PageHandle *page = (BM_PageHandle *)malloc(sizeof(BM_PageHandle));
-    tableInfo *info = (tableInfo *) (rel->mgmtData);
+    tabInfo *info = (tabInfo *) (rel->mgmtData);
     int page_num, slot;
 
     if (info->tstone_root != NULL){
@@ -628,13 +628,13 @@ extern RC insertRecord (RM_TableData *rel, Record *record){
 
     record->id.tstone = false;
     (info->numTuples)++;
-    tableInfoToFile(rel->name, info);
+    tabInfoToFile(rel->name, info);
     free(page);
     return RC_OK;
 }
 
 extern RC deleteRecord (RM_TableData *rel, RID id){
-    tableInfo *info = (tableInfo *) (rel->mgmtData);
+    tabInfo *info = (tabInfo *) (rel->mgmtData);
     tNode *tstone_iter = info->tstone_root;
     if(info->numTuples>0){
         /* add deleted RID to end of tombstone list */
@@ -656,7 +656,7 @@ extern RC deleteRecord (RM_TableData *rel, RID id){
         tstone_iter->id.slot = id.slot;
         tstone_iter->id.tstone = TRUE;
         (info->numTuples)--;
-        tableInfoToFile(rel->name, info);
+        tabInfoToFile(rel->name, info);
     }
     else{
         return RC_WRITE_FAILED;     //temp error. will update later.
@@ -667,7 +667,7 @@ extern RC deleteRecord (RM_TableData *rel, RID id){
 }
 extern RC updateRecord (RM_TableData *rel, Record *record){
     BM_PageHandle *page = (BM_PageHandle *)malloc(sizeof(BM_PageHandle));
-    tableInfo *info = (tableInfo *) (rel->mgmtData);
+    tabInfo *info = (tabInfo *) (rel->mgmtData);
     int page_num, slot;
 
     page_num = record->id.page;
@@ -683,13 +683,13 @@ extern RC updateRecord (RM_TableData *rel, Record *record){
     unpinPage(info->bm, page);
     forcePage(info->bm, page);
 
-    tableInfoToFile(rel->name, info);
+    tabInfoToFile(rel->name, info);
 
     return RC_OK;
 
 }
 extern RC getRecord (RM_TableData *rel, RID id, Record *record){
-    tableInfo *info = (tableInfo *) (rel->mgmtData);
+    tabInfo *info = (tabInfo *) (rel->mgmtData);
     BM_PageHandle *page = (BM_PageHandle *)malloc(sizeof(BM_PageHandle));
 
     int page_num, slot;
@@ -748,12 +748,12 @@ extern RC startScan (RM_TableData *rel, RM_ScanHandle *scan, Expr *cond){
     scan->rel = rel;
 
 	/* initialize rNode to store the information about the record to be searched and the condition to be evaluated */
-    recordInfo *rNode = (recordInfo *) malloc(sizeof(recordInfo));
-    rNode->curPage = ((tableInfo *)rel->mgmtData)->recordStartPage;
-    rNode->curSlot = 0;
+    recInfo *rNode = (recInfo *) malloc(sizeof(recInfo));
+    rNode->Page = ((tabInfo *)rel->mgmtData)->recordStartPage;
+    rNode->Slot = 0;
     rNode->cond = cond;
-    rNode->numSlots = ((tableInfo *)rel->mgmtData)->maxSlots;
-    rNode->numPages = ((tableInfo *)rel->mgmtData)->recordLastPage;
+    rNode->numSlots = ((tabInfo *)rel->mgmtData)->maxSlots;
+    rNode->numPages = ((tabInfo *)rel->mgmtData)->recordLastPage;
 
 	/* assign rNode to scan->mgmtData */
     scan->mgmtData = (void *) rNode;
@@ -762,14 +762,14 @@ extern RC startScan (RM_TableData *rel, RM_ScanHandle *scan, Expr *cond){
 }
 extern RC next (RM_ScanHandle *scan, Record *record){
 
-    recordInfo *rNode;
+    recInfo *rNode;
     Value *value;
     rNode = scan->mgmtData;
     RC status;
 
 
-    record->id.slot = rNode->curSlot;
-    record->id.page = rNode->curPage;
+    record->id.slot = rNode->Slot;
+    record->id.page = rNode->Page;
 
 	/* fetch the record as per the page and slot id */
     status = getRecord(scan->rel, record->id, record);
@@ -781,12 +781,12 @@ extern RC next (RM_ScanHandle *scan, Record *record){
 
 	/* check tombstone id for a deleted record and update record node parameters accordingly */
     else if(record->id.tstone == 1){
-        if (rNode->curSlot == rNode->numSlots - 1){
-            rNode->curSlot = 0;
-            (rNode->curPage)++;
+        if (rNode->Slot == rNode->numSlots - 1){
+            rNode->Slot = 0;
+            (rNode->Page)++;
         }
         else{
-            (rNode->curSlot)++;
+            (rNode->Slot)++;
         }
         scan->mgmtData = rNode;
         return next(scan, record);
@@ -794,12 +794,12 @@ extern RC next (RM_ScanHandle *scan, Record *record){
 	/* evaluate the given expression to check if the record is the one required by the client */
     else{
         evalExpr(record, scan->rel->schema, rNode->cond, &value);
-        if (rNode->curSlot == rNode->numSlots - 1){
-            rNode->curSlot = 0;
-            (rNode->curPage)++;
+        if (rNode->Slot == rNode->numSlots - 1){
+            rNode->Slot = 0;
+            (rNode->Page)++;
         }
         else{
-            (rNode->curSlot)++;
+            (rNode->Slot)++;
         }
         scan->mgmtData = rNode;
 
