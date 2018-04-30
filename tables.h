@@ -29,18 +29,18 @@ typedef struct RID {
 
 typedef struct Record
 {
-  RID id;
-  char *data;
+  RID id; //record id
+  char *data; //record String name
 } Record;
 
 // information of a table schema: its attributes, datatypes,
 typedef struct Schema
 {
-  int numAttr;
-  char **attrNames;
-  DataType *dataTypes;
-  int *typeLength;
-  int *keyAttrs;
+  int numAttr; //number of attributes
+  char **attrNames; //a pointer to an array-like storage of attribute names
+  DataType *dataTypes; // data types for the attributes as defined above
+  int *typeLength; //length of types
+  int *keyAttrs; 
   int keySize;
 } Schema;
 
